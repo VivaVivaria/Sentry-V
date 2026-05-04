@@ -1,0 +1,35 @@
+# Sentry-V Ecosystem Profiles
+# These profiles define ecosystem-specific seasonal logic and validation thresholds.
+
+profiles:
+  michigan_deciduous_riparian:
+    active_months: [4, 5, 6, 7, 8, 9, 10]
+    shoulder_months: [3, 11]
+    dormant_months: [12, 1, 2]
+
+    ndvi_spread_high: 0.30
+    min_pixel_count: 50
+    min_baseline_years: 5
+    min_composite_days: 6
+    baseline_start_year: 2018
+
+    seasonal_notes:
+      active: Vegetation interpretation is most reliable during the active growing season.
+      shoulder: Interpretation should be treated as provisional because green-up or senescence may be underway.
+      dormant: Vegetation anomaly interpretation is weak during dormant season.
+
+  florida_mangrove:
+    active_months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    shoulder_months: []
+    dormant_months: []
+
+    ndvi_spread_high: 0.25
+    min_pixel_count: 100
+    min_baseline_years: 3
+    min_composite_days: 4
+    baseline_start_year: 2018
+
+    seasonal_notes:
+      active: Mangrove vegetation can be interpreted year-round, but rainfall, salinity, storm surge, and drought context may be needed.
+      shoulder: No shoulder season defined for this profile.
+      dormant: No dormant season defined for this profile.

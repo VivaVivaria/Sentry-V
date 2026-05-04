@@ -1,0 +1,56 @@
+# Sentry-V Monitoring Configuration
+# Purpose: Define what this Sentry-V unit is watching.
+
+client:
+  client_id: sentry_v_demo
+  client_name: Sentry-V Demo Sites
+  region: United States
+
+sites:
+  - site_id: rouge_eic
+    site_name: UM-Dearborn EIC / Rouge River
+    profile: michigan_deciduous_riparian
+    region: Dearborn, Michigan
+    ecosystem_type: urban riparian woodland
+
+    data_source: COPERNICUS/S2_SR_HARMONIZED
+
+    metrics:
+      - NDVI
+      - NDMI
+
+    time_step: monthly
+
+    monitoring_season:
+      start_month: 4
+      end_month: 10
+
+    geometry:
+      type: Point
+      coordinates: [-83.235, 42.316]
+
+    purpose: Detect unusual vegetation activity in Rouge River urban riparian sites.
+
+  - site_id: tti_mangrove
+    site_name: Ten Thousand Islands Mangrove Test Site
+    profile: florida_mangrove
+    region: Southwest Florida
+    ecosystem_type: tropical mangrove
+
+    data_source: COPERNICUS/S2_SR_HARMONIZED
+
+    metrics:
+      - NDVI
+      - NDMI
+
+    time_step: monthly
+
+    monitoring_season:
+      start_month: 1
+      end_month: 12
+
+    geometry:
+      type: Point
+      coordinates: [-81.36, 25.85]
+
+    purpose: Detect unusual vegetation activity in stable tropical mangrove canopy.
