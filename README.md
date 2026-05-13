@@ -1,16 +1,12 @@
 # Sentry-V
 
-**Detect vegetation stress so environmental teams know where to act.**
-
-Sentry-V is a vegetation stress observatory built to monitor ecosystem change over time. It uses remote sensing, site configuration, validation guardrails, and statistical logic to help identify unusual vegetation behavior.
+Sentry-V is a vegetation monitoring system that helps environmental teams detect potential stress before it becomes obvious in the field. It runs continuously to catch early stress signals, locate areas of concern, and suggest possible explanations so teams know where to investigate.
 
 The goal is simple:
 
-> Build a repeatable ecological monitoring system that helps naturalists, citizen scientists, and environmental teams notice change earlier, investigate with better context, and connect digital observation with real fieldwork.
+ **ALert Potential vegetation stress so environmental teams know where to act.**
 
----
-
-## What Sentry-V Is
+## Why it called Sentry-V 
 
 Sentry-V is a **Digital Sentry** for vegetation monitoring.
 
