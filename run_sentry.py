@@ -16,6 +16,9 @@ from engine.calculate_phenophase import get_phenophase_context
 from engine.classify_status import classify_vegetation_status
 from engine.action_logic import determine_disposition
 from engine.signal_fusion import generate_fusion_summary
+
+from context.precipitation import get_precipitation_context
+
 from validation.quality_checks import assess_confidence
 from operations.export_record import save_monitoring_artifact
 from operations.system_logger import get_utc_timestamp, save_run_log
@@ -42,12 +45,6 @@ def process_metric(
 ):
     """
     Run the full Sentry-V monitoring pipeline for one site and one metric.
-
-    Example:
-    - rouge_eic / NDVI
-    - rouge_eic / NDMI
-    - tti_mangrove / NDVI
-    - tti_mangrove / NDMI
 
     The phenophase callback only runs during the NDVI pass because NDVI is
     the main seasonal greenness/timing signal.
@@ -272,7 +269,7 @@ def process_site(site_config, profiles_config, target_year, target_month):
     """
     Collect imagery once for a site, add all indices once,
     loop through configured metrics, calculate phenophase during NDVI,
-    then generate a fusion summary.
+    calculate precipitation context, then generate a fusion summary.
     """
     site_id = site_config["site_id"]
     site_name = site_config["site_name"]
@@ -337,9 +334,6 @@ def process_site(site_config, profiles_config, target_year, target_month):
     def capture_phenophase(current_ndvi):
         """
         Capture phenophase context during the NDVI metric pass.
-
-        Uses the current NDVI value and compares it to historical previous/current/next
-        month NDVI baselines.
         """
         nonlocal site_phenophase_data
 
@@ -376,6 +370,26 @@ def process_site(site_config, profiles_config, target_year, target_month):
             site_completed_records.append(metric_output["record"])
 
     # ==========================================
+    #   PHASE 8E: PRECIPITATION CONTEXT
+    # ==========================================
+    precipitation_context = {
+        "classification": "insufficient_data",
+        "note": "Precipitation context was not calculated."
+    }
+
+    if len(site_completed_records) > 1:
+        print("\n[Running] Phase 8E: Precipitation Context")
+
+        precipitation_context = get_precipitation_context(
+            site_geometry=site_geometry,
+            target_year=target_year,
+            target_month=target_month
+        )
+
+        print("\n--- Precipitation Context ---")
+        print(json.dumps(precipitation_context, indent=2))
+
+    # ==========================================
     #   POST-METRIC FUSION SUMMARY
     # ==========================================
     if len(site_completed_records) > 1:
@@ -385,7 +399,8 @@ def process_site(site_config, profiles_config, target_year, target_month):
             profile=profile_name,
             month=formatted_month,
             metric_records=site_completed_records,
-            pheno_data=site_phenophase_data
+            pheno_data=site_phenophase_data,
+            precipitation_context=precipitation_context
         )
 
         fusion_path = save_fusion_artifact(

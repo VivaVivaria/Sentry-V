@@ -26,8 +26,13 @@ sites:
       end_month: 10
 
     geometry:
-      type: Point
-      coordinates: [-83.235, 42.316]
+      type: Polygon
+      coordinates:
+        - - [-83.24017886375428, 42.31590729413335]  # top-left
+          - [-83.24017886375428, 42.31410729288537]  # bottom-left
+          - [-83.23729886375428, 42.31410729288537]  # bottom-right
+          - [-83.23729886375428, 42.31590729413335]  # top-right
+          - [-83.24017886375428, 42.31590729413335]  # close polygon
 
     purpose: Detect unusual vegetation activity in Rouge River urban riparian sites.
 
@@ -50,7 +55,12 @@ sites:
       end_month: 12
 
     geometry:
-      type: Point
-      coordinates: [-81.36, 25.85]
+      type: Polygon
+      coordinates:
+        - - [-81.3575585, 25.8352039]  # NW
+          - [-81.3575585, 25.8307039]  # SW
+          - [-81.3525585, 25.8307039]  # SE
+          - [-81.3525585, 25.8352039]  # NE
+          - [-81.3575585, 25.8352039]  # close polygon
 
     purpose: Detect unusual vegetation activity in stable tropical mangrove canopy.
