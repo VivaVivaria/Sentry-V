@@ -11,6 +11,10 @@ OUTPUTS_DIR = Path("outputs")
 RUN_LOGS_DIR = OUTPUTS_DIR / "run_logs"
 
 
+# =========================================================
+# TIME + JSON HELPERS
+# =========================================================
+
 def utc_now_iso():
     """
     Return current UTC timestamp as ISO string for BigQuery TIMESTAMP fields.
@@ -48,9 +52,16 @@ def get_table_id(table_name):
     return f"{PROJECT_ID}.{DATASET_ID}.{table_name}"
 
 
+# =========================================================
+# PARSERS
+# =========================================================
+
 def parse_metric_record(path):
     """
     Convert one NDVI/NDMI status artifact into a BigQuery row.
+
+    One row represents:
+    site_id + month + metric
     """
     record = read_json(path)
 
@@ -89,6 +100,9 @@ def parse_metric_record(path):
 def parse_fusion_summary(path):
     """
     Convert one fusion summary artifact into a BigQuery row.
+
+    One row represents:
+    site_id + month
     """
     record = read_json(path)
 
@@ -140,10 +154,12 @@ def parse_fusion_summary(path):
 def parse_run_log(path):
     """
     Convert one run log artifact into a BigQuery row.
+
+    One row represents:
+    one Sentry-V run log artifact.
     """
     record = read_json(path)
 
-    # Support slightly different key names safely.
     month = (
         record.get("month")
         or record.get("target_month")
@@ -167,29 +183,13 @@ def parse_run_log(path):
     return row
 
 
-def insert_rows(client, table_name, rows):
-    """
-    Insert rows into a BigQuery table.
-    """
-    if not rows:
-        print(f"[INFO] No rows to insert into {table_name}.")
-        return
-
-    table_id = get_table_id(table_name)
-
-    errors = client.insert_rows_json(table_id, rows)
-
-    if errors:
-        print(f"[ERROR] Failed inserting rows into {table_id}")
-        print(json.dumps(errors, indent=2))
-        raise RuntimeError(f"BigQuery insert failed for {table_name}")
-
-    print(f"[SUCCESS] Inserted {len(rows)} row(s) into {table_id}")
-
+# =========================================================
+# LOAD LOCAL ARTIFACTS
+# =========================================================
 
 def load_metric_artifacts():
     """
-    Load NDVI and NDMI status artifacts.
+    Load NDVI and NDMI status artifacts from outputs/.
     """
     metric_paths = []
 
@@ -206,7 +206,7 @@ def load_metric_artifacts():
 
 def load_fusion_artifacts():
     """
-    Load site-level fusion summary artifacts.
+    Load site-level fusion summary artifacts from outputs/.
     """
     fusion_paths = sorted(OUTPUTS_DIR.glob("*_fusion_summary.json"))
 
@@ -220,7 +220,7 @@ def load_fusion_artifacts():
 
 def load_run_log_artifacts():
     """
-    Load run log artifacts.
+    Load run log artifacts from outputs/run_logs/.
     """
     if not RUN_LOGS_DIR.exists():
         return []
@@ -235,12 +235,57 @@ def load_run_log_artifacts():
     return rows
 
 
+# =========================================================
+# BIGQUERY TABLE REFRESH
+# =========================================================
+
+def refresh_table(client, table_name, rows):
+    """
+    Replace a BigQuery table with the current local artifact rows.
+
+    This makes the loader idempotent for the local prototype:
+    running the loader multiple times will not duplicate rows.
+
+    Uses a BigQuery load job with WRITE_TRUNCATE instead of streaming inserts.
+    This avoids BigQuery streaming-buffer DELETE limitations.
+    """
+    table_id = get_table_id(table_name)
+
+    if not rows:
+        print(f"[INFO] No rows found for {table_name}. Table not refreshed.")
+        return
+
+    job_config = bigquery.LoadJobConfig(
+        write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
+        source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
+    )
+
+    load_job = client.load_table_from_json(
+        rows,
+        table_id,
+        job_config=job_config,
+    )
+
+    load_job.result()
+
+    print(f"[SUCCESS] Refreshed {table_id} with {len(rows)} row(s).")
+
+
+# =========================================================
+# MAIN LOADER
+# =========================================================
+
 def load_all_artifacts_to_bigquery():
     """
     Load local Sentry-V JSON artifacts into BigQuery.
 
     This loader is intentionally separate from run_sentry.py so the science
     engine remains decoupled from cloud storage.
+
+    Idempotent behavior:
+    - metric_records table is replaced with current local metric artifacts
+    - fusion_summaries table is replaced with current local fusion artifacts
+    - run_logs table is replaced with current local run log artifacts
     """
     print("\n========================================")
     print("   SENTRY-V BIGQUERY ARTIFACT LOADER")
@@ -256,11 +301,13 @@ def load_all_artifacts_to_bigquery():
     print(f"Fusion summaries found: {len(fusion_rows)}")
     print(f"Run logs found: {len(run_log_rows)}")
 
-    insert_rows(client, "metric_records", metric_rows)
-    insert_rows(client, "fusion_summaries", fusion_rows)
-    insert_rows(client, "run_logs", run_log_rows)
+    print("\n[Running] BigQuery table refresh...")
 
-    print("\n[SUCCESS] All available Sentry-V artifacts loaded into BigQuery.")
+    refresh_table(client, "metric_records", metric_rows)
+    refresh_table(client, "fusion_summaries", fusion_rows)
+    refresh_table(client, "run_logs", run_log_rows)
+
+    print("\n[SUCCESS] All available Sentry-V artifacts refreshed in BigQuery.")
 
 
 if __name__ == "__main__":
