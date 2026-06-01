@@ -435,7 +435,7 @@ def main():
     target_month = 4
 
     try:
-        ee.Initialize()
+        ee.Initialize(project="sentry-v")
 
         print("\n[Running] Phase 1B: Configuration & Ecosystem Profiles")
 
