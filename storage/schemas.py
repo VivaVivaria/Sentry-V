@@ -83,3 +83,30 @@ RUN_LOGS_SCHEMA = [
     bigquery.SchemaField("load_timestamp", "TIMESTAMP"),
     bigquery.SchemaField("raw_record_json", "STRING"),
 ]
+# ---------------------------------------------------------
+# TABLE 4: CLIMATE DRIVER RECORDS
+# ---------------------------------------------------------
+CLIMATE_DRIVER_RECORDS_SCHEMA = [
+    bigquery.SchemaField("site_id", "STRING", mode="REQUIRED"),
+    bigquery.SchemaField("site_name", "STRING"),
+    bigquery.SchemaField("month", "STRING", mode="REQUIRED"),
+    bigquery.SchemaField("driver", "STRING", mode="REQUIRED"),
+    bigquery.SchemaField("driver_label", "STRING"),
+    bigquery.SchemaField("context_type", "STRING"),
+    bigquery.SchemaField("current_value", "FLOAT"),
+    bigquery.SchemaField("baseline_median", "FLOAT"),
+    bigquery.SchemaField("baseline_mad", "FLOAT"),
+    bigquery.SchemaField("baseline_years_used", "INTEGER"),
+    bigquery.SchemaField("robust_z_score", "FLOAT"),
+    bigquery.SchemaField("classification", "STRING"),
+    bigquery.SchemaField("direction", "STRING"),
+    bigquery.SchemaField("confidence", "STRING"),
+    bigquery.SchemaField("units", "STRING"),
+    bigquery.SchemaField("aggregation", "STRING"),
+    bigquery.SchemaField("source_dataset", "STRING"),
+    bigquery.SchemaField("note", "STRING"),
+    bigquery.SchemaField("artifact_path", "STRING"),
+    bigquery.SchemaField("run_timestamp", "TIMESTAMP"),
+    bigquery.SchemaField("load_timestamp", "TIMESTAMP"),
+    bigquery.SchemaField("raw_record_json", "STRING"),
+]

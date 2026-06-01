@@ -5,10 +5,17 @@ from pathlib import Path
 from google.cloud import bigquery
 
 from storage.bigquery_client import PROJECT_ID, DATASET_ID
+from storage.schemas import (
+    METRIC_RECORDS_SCHEMA,
+    FUSION_SUMMARIES_SCHEMA,
+    RUN_LOGS_SCHEMA,
+    CLIMATE_DRIVER_RECORDS_SCHEMA,
+)
 
 
 OUTPUTS_DIR = Path("outputs")
 RUN_LOGS_DIR = OUTPUTS_DIR / "run_logs"
+CLIMATE_DRIVERS_DIR = OUTPUTS_DIR / "climate_drivers"
 
 
 # =========================================================
@@ -183,6 +190,49 @@ def parse_run_log(path):
     return row
 
 
+def parse_climate_driver_records(path):
+    """
+    Convert one gridMET climate driver artifact into BigQuery rows.
+
+    One artifact contains multiple records:
+    site_id + month + driver
+    """
+    artifact = read_json(path)
+    records = artifact.get("records", [])
+
+    rows = []
+
+    for record in records:
+        row = {
+            "site_id": record.get("site_id"),
+            "site_name": record.get("site_name"),
+            "month": record.get("month"),
+            "driver": record.get("driver"),
+            "driver_label": record.get("driver_label"),
+            "context_type": record.get("context_type"),
+            "current_value": record.get("current_value"),
+            "baseline_median": record.get("baseline_median"),
+            "baseline_mad": record.get("baseline_mad"),
+            "baseline_years_used": record.get("baseline_years_used"),
+            "robust_z_score": record.get("robust_z_score"),
+            "classification": record.get("classification"),
+            "direction": record.get("direction"),
+            "confidence": record.get("confidence"),
+            "units": record.get("units"),
+            "aggregation": record.get("aggregation"),
+            "source_dataset": record.get("source_dataset"),
+            "note": record.get("note"),
+            "artifact_path": str(path),
+            "run_timestamp": record.get("run_timestamp") or file_mtime_iso(path),
+            "load_timestamp": utc_now_iso(),
+            "raw_record_json": compact_json(record),
+        }
+
+        rows.append(row)
+
+    return rows
+
+
 # =========================================================
 # LOAD LOCAL ARTIFACTS
 # =========================================================
@@ -235,11 +285,28 @@ def load_run_log_artifacts():
     return rows
 
 
+def load_climate_driver_artifacts():
+    """
+    Load gridMET climate driver artifacts from outputs/climate_drivers/.
+    """
+    if not CLIMATE_DRIVERS_DIR.exists():
+        return []
+
+    climate_paths = sorted(CLIMATE_DRIVERS_DIR.glob("*_gridmet_climate_drivers.json"))
+
+    rows = []
+
+    for path in climate_paths:
+        rows.extend(parse_climate_driver_records(path))
+
+    return rows
+
+
 # =========================================================
 # BIGQUERY TABLE REFRESH
 # =========================================================
 
-def refresh_table(client, table_name, rows):
+def refresh_table(client, table_name, rows, schema):
     """
     Replace a BigQuery table with the current local artifact rows.
 
@@ -256,6 +323,7 @@ def refresh_table(client, table_name, rows):
         return
 
     job_config = bigquery.LoadJobConfig(
+        schema=schema,
         write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
         source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
     )
@@ -286,6 +354,7 @@ def load_all_artifacts_to_bigquery():
     - metric_records table is replaced with current local metric artifacts
     - fusion_summaries table is replaced with current local fusion artifacts
     - run_logs table is replaced with current local run log artifacts
+    - climate_driver_records table is replaced with current climate driver artifacts
     """
     print("\n========================================")
     print("   SENTRY-V BIGQUERY ARTIFACT LOADER")
@@ -296,16 +365,24 @@ def load_all_artifacts_to_bigquery():
     metric_rows = load_metric_artifacts()
     fusion_rows = load_fusion_artifacts()
     run_log_rows = load_run_log_artifacts()
+    climate_driver_rows = load_climate_driver_artifacts()
 
     print(f"Metric records found: {len(metric_rows)}")
     print(f"Fusion summaries found: {len(fusion_rows)}")
     print(f"Run logs found: {len(run_log_rows)}")
+    print(f"Climate driver records found: {len(climate_driver_rows)}")
 
     print("\n[Running] BigQuery table refresh...")
 
-    refresh_table(client, "metric_records", metric_rows)
-    refresh_table(client, "fusion_summaries", fusion_rows)
-    refresh_table(client, "run_logs", run_log_rows)
+    refresh_table(client, "metric_records", metric_rows, METRIC_RECORDS_SCHEMA)
+    refresh_table(client, "fusion_summaries", fusion_rows, FUSION_SUMMARIES_SCHEMA)
+    refresh_table(client, "run_logs", run_log_rows, RUN_LOGS_SCHEMA)
+    refresh_table(
+        client,
+        "climate_driver_records",
+        climate_driver_rows,
+        CLIMATE_DRIVER_RECORDS_SCHEMA,
+    )
 
     print("\n[SUCCESS] All available Sentry-V artifacts refreshed in BigQuery.")
 
