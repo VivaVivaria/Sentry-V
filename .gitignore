@@ -250,4 +250,4 @@ outputs/*
 
 # --- Optional private notes ---
 private/
-local_notes/
+local_notes/outputs/
