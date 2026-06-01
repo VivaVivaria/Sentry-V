@@ -6,9 +6,16 @@ from storage.bigquery_client import PROJECT_ID
 
 
 VIEW_FILES = [
+    # Existing operator/dashboard query layer
     Path("sql/views/v_site_monthly_summary.sql"),
     Path("sql/views/v_metric_history.sql"),
     Path("sql/views/v_reportable_signals.sql"),
+
+    # Phase 11D client dashboard semantic views
+    Path("sql/views/v_client_signal_feed.sql"),
+    Path("sql/views/v_client_site_review_cards.sql"),
+    Path("sql/views/v_historical_context_explorer.sql"),
+    Path("sql/views/v_driver_evidence_matrix.sql"),
 ]
 
 
