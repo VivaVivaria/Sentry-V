@@ -110,6 +110,9 @@ def parse_fusion_summary(path):
 
     One row represents:
     site_id + month
+
+    Phase 11C adds typed climate-driver fusion fields so dashboard views
+    do not need to parse raw_record_json.
     """
     record = read_json(path)
 
@@ -119,6 +122,14 @@ def parse_fusion_summary(path):
 
     phenophase = record.get("phenophase_context", {})
     precipitation = record.get("precipitation_context", {})
+
+    climate_summary = record.get("climate_driver_context", {})
+    climate_drivers = climate_summary.get("drivers", {}) if isinstance(climate_summary, dict) else {}
+
+    temperature = climate_drivers.get("temperature_mean_c", {})
+    vpd = climate_drivers.get("vpd_mean_kpa", {})
+    eto = climate_drivers.get("eto_total_mm", {})
+    gridmet_precip = climate_drivers.get("precip_total_mm", {})
 
     closest_month = phenophase.get("closest_month")
     closest_month = str(closest_month) if closest_month is not None else None
@@ -146,6 +157,29 @@ def parse_fusion_summary(path):
         "precipitation_current_total_mm": precipitation.get("current_total_mm"),
         "precipitation_baseline_median_mm": precipitation.get("baseline_median_mm"),
         "precipitation_robust_z_score": precipitation.get("robust_z_score"),
+
+        "climate_context_available": climate_summary.get("available", False),
+        "climate_review_cue": record.get("climate_review_cue"),
+
+        "temperature_classification": temperature.get("classification"),
+        "temperature_direction": temperature.get("direction"),
+        "temperature_value_c": temperature.get("current_value"),
+        "temperature_robust_z_score": temperature.get("robust_z_score"),
+
+        "vpd_classification": vpd.get("classification"),
+        "vpd_direction": vpd.get("direction"),
+        "vpd_value_kpa": vpd.get("current_value"),
+        "vpd_robust_z_score": vpd.get("robust_z_score"),
+
+        "eto_classification": eto.get("classification"),
+        "eto_direction": eto.get("direction"),
+        "eto_value_mm": eto.get("current_value"),
+        "eto_robust_z_score": eto.get("robust_z_score"),
+
+        "gridmet_precipitation_classification": gridmet_precip.get("classification"),
+        "gridmet_precipitation_direction": gridmet_precip.get("direction"),
+        "gridmet_precipitation_value_mm": gridmet_precip.get("current_value"),
+        "gridmet_precipitation_robust_z_score": gridmet_precip.get("robust_z_score"),
 
         "hypothesis": record.get("hypothesis"),
         "fusion_disposition": record.get("fusion_disposition"),

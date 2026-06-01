@@ -1,7 +1,7 @@
 import sys
 
-from run_sentry import main as run_sentry_main
 from climate.run_gridmet_artifacts import generate_gridmet_artifacts
+from run_sentry import main as run_sentry_main
 from storage.load_artifacts import load_all_artifacts_to_bigquery
 
 
@@ -18,15 +18,15 @@ def main():
     print("========================================")
 
     try:
-        print("\n[Step 1] Running Sentry-V vegetation monitoring engine...")
-        run_sentry_main()
-
-        print("\n[Step 2] Generating gridMET climate driver artifacts...")
+        print("\n[Step 1] Generating gridMET climate driver artifacts...")
         generate_gridmet_artifacts(
             target_year=TARGET_YEAR,
             target_month=TARGET_MONTH,
             ee_project="sentry-v",
         )
+
+        print("\n[Step 2] Running Sentry-V vegetation monitoring engine...")
+        run_sentry_main()
 
         print("\n[Step 3] Loading all artifacts into BigQuery...")
         load_all_artifacts_to_bigquery()

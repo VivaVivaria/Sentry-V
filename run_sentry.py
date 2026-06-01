@@ -265,11 +265,41 @@ def save_fusion_artifact(fusion_payload, site_id, formatted_month):
     return fusion_path
 
 
+def load_climate_driver_context(site_id, formatted_month):
+    """
+    Load gridMET climate driver context for a site/month if available.
+
+    Expected artifact:
+    outputs/climate_drivers/{site_id}_{formatted_month}_gridmet_climate_drivers.json
+
+    This function is intentionally optional:
+    - If the climate artifact exists, fusion uses it.
+    - If it does not exist, fusion continues with climate context unavailable.
+    """
+    climate_path = (
+        Path("outputs")
+        / "climate_drivers"
+        / f"{site_id}_{formatted_month}_gridmet_climate_drivers.json"
+    )
+
+    if not climate_path.exists():
+        print(f"[INFO] Climate driver artifact not found: {climate_path}")
+        return None
+
+    with open(climate_path, "r", encoding="utf-8") as file:
+        climate_context = json.load(file)
+
+    print(f"[SUCCESS] Climate driver context loaded: {climate_path}")
+
+    return climate_context
+
+
 def process_site(site_config, profiles_config, target_year, target_month):
     """
     Collect imagery once for a site, add all indices once,
     loop through configured metrics, calculate phenophase during NDVI,
-    calculate precipitation context, then generate a fusion summary.
+    calculate precipitation context, load gridMET climate context,
+    then generate a fusion summary.
     """
     site_id = site_config["site_id"]
     site_name = site_config["site_name"]
@@ -390,6 +420,22 @@ def process_site(site_config, profiles_config, target_year, target_month):
         print(json.dumps(precipitation_context, indent=2))
 
     # ==========================================
+    #   PHASE 11C: CLIMATE DRIVER CONTEXT
+    # ==========================================
+    climate_context = None
+
+    if len(site_completed_records) > 1:
+        print("\n[Running] Phase 11C: Climate Driver Context")
+
+        climate_context = load_climate_driver_context(
+            site_id=site_id,
+            formatted_month=formatted_month
+        )
+
+        if climate_context is None:
+            print("[INFO] Fusion will continue without gridMET climate context.")
+
+    # ==========================================
     #   POST-METRIC FUSION SUMMARY
     # ==========================================
     if len(site_completed_records) > 1:
@@ -400,7 +446,8 @@ def process_site(site_config, profiles_config, target_year, target_month):
             month=formatted_month,
             metric_records=site_completed_records,
             pheno_data=site_phenophase_data,
-            precipitation_context=precipitation_context
+            precipitation_context=precipitation_context,
+            climate_context=climate_context
         )
 
         fusion_path = save_fusion_artifact(

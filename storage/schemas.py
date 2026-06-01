@@ -59,6 +59,30 @@ FUSION_SUMMARIES_SCHEMA = [
     bigquery.SchemaField("precipitation_baseline_median_mm", "FLOAT"),
     bigquery.SchemaField("precipitation_robust_z_score", "FLOAT"),
 
+    # Phase 11C — Climate-driver fusion fields
+    bigquery.SchemaField("climate_context_available", "BOOLEAN"),
+    bigquery.SchemaField("climate_review_cue", "STRING"),
+
+    bigquery.SchemaField("temperature_classification", "STRING"),
+    bigquery.SchemaField("temperature_direction", "STRING"),
+    bigquery.SchemaField("temperature_value_c", "FLOAT"),
+    bigquery.SchemaField("temperature_robust_z_score", "FLOAT"),
+
+    bigquery.SchemaField("vpd_classification", "STRING"),
+    bigquery.SchemaField("vpd_direction", "STRING"),
+    bigquery.SchemaField("vpd_value_kpa", "FLOAT"),
+    bigquery.SchemaField("vpd_robust_z_score", "FLOAT"),
+
+    bigquery.SchemaField("eto_classification", "STRING"),
+    bigquery.SchemaField("eto_direction", "STRING"),
+    bigquery.SchemaField("eto_value_mm", "FLOAT"),
+    bigquery.SchemaField("eto_robust_z_score", "FLOAT"),
+
+    bigquery.SchemaField("gridmet_precipitation_classification", "STRING"),
+    bigquery.SchemaField("gridmet_precipitation_direction", "STRING"),
+    bigquery.SchemaField("gridmet_precipitation_value_mm", "FLOAT"),
+    bigquery.SchemaField("gridmet_precipitation_robust_z_score", "FLOAT"),
+
     bigquery.SchemaField("hypothesis", "STRING"),
     bigquery.SchemaField("fusion_disposition", "STRING"),
     bigquery.SchemaField("artifact_path", "STRING"),
@@ -83,6 +107,7 @@ RUN_LOGS_SCHEMA = [
     bigquery.SchemaField("load_timestamp", "TIMESTAMP"),
     bigquery.SchemaField("raw_record_json", "STRING"),
 ]
+
 # ---------------------------------------------------------
 # TABLE 4: CLIMATE DRIVER RECORDS
 # ---------------------------------------------------------
